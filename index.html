@@ -211,6 +211,70 @@
                 transform: scale(1);
             }
         }
+        /* Breathing/thinking node on canvas */
+        .node-thinking {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.12), rgba(124, 58, 237, 0.06));
+            border: 2px solid rgba(37, 99, 235, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: breathe 3s ease-in-out infinite;
+            position: relative;
+        }
+        .node-thinking::before,
+        .node-thinking::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1.5px solid rgba(37, 99, 235, 0.12);
+        }
+        .node-thinking::before {
+            animation: ripple 3s ease-out infinite;
+        }
+        .node-thinking::after {
+            animation: ripple 3s ease-out 1.5s infinite;
+        }
+        .node-thinking-inner {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            animation: innerPulse 2.5s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+        }
+        .node-thinking-label {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #9ca3af;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            animation: fadeInOut 3s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(37, 99, 235, 0.08); }
+            50% { transform: scale(1.1); box-shadow: 0 0 50px rgba(37, 99, 235, 0.18); }
+        }
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes innerPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
         /* Typing indicator */
         .typing-indicator {
             display: flex;
@@ -519,7 +583,16 @@
             );
         }
 
-        const nodeTypes = { orgNode: OrgNode, categoryNode: CategoryNode, detailNode: DetailNode };
+        function ThinkingNode() {
+            return (
+                <div className="node-thinking">
+                    <div className="node-thinking-inner" />
+                    <div className="node-thinking-label">Listening...</div>
+                </div>
+            );
+        }
+
+        const nodeTypes = { orgNode: OrgNode, categoryNode: CategoryNode, detailNode: DetailNode, thinkingNode: ThinkingNode };
 
         // ─── Main App ──────────────────────────────────────────────────
         function App() {
@@ -601,7 +674,7 @@
                 });
             }, [nodes, setNodes, setEdges]);
 
-            // Initialize the mindmap when org name is set
+            // Initialize the mindmap when org name is set — only org node + breathing entity
             const initializeMindmap = useCallback((name) => {
                 const orgNode = {
                     id: 'org-center',
@@ -609,35 +682,53 @@
                     position: { x: 400, y: 300 },
                     data: { label: name },
                 };
+                const thinkingNode = {
+                    id: 'thinking',
+                    type: 'thinkingNode',
+                    position: { x: 375, y: 430 },
+                    data: {},
+                    draggable: false,
+                    selectable: false,
+                    connectable: false,
+                };
+                setNodes([orgNode, thinkingNode]);
+                setEdges([]);
+            }, [setNodes, setEdges]);
 
-                const catNodes = CATEGORY_KEYS.map((key, i) => {
-                    const pos = computeCategoryPosition(i, CATEGORY_KEYS.length);
-                    const cat = CATEGORIES[key];
-                    return {
-                        id: `cat-${key}`,
-                        type: 'categoryNode',
-                        position: pos,
-                        data: { label: cat.label, icon: cat.icon, className: cat.className },
-                    };
+            // Reveal a single category node + edge when its questions begin
+            const addCategoryToMap = useCallback((categoryKey) => {
+                const catIndex = CATEGORY_KEYS.indexOf(categoryKey);
+                const pos = computeCategoryPosition(catIndex, CATEGORY_KEYS.length);
+                const cat = CATEGORIES[categoryKey];
+
+                setNodes((prev) => {
+                    // Remove thinking node once the first category appears
+                    const filtered = prev.filter((n) => n.id !== 'thinking');
+                    return [
+                        ...filtered,
+                        {
+                            id: `cat-${categoryKey}`,
+                            type: 'categoryNode',
+                            position: pos,
+                            data: { label: cat.label, icon: cat.icon, className: cat.className },
+                        },
+                    ];
                 });
 
-                const catEdges = CATEGORY_KEYS.map((key) => {
-                    const cat = CATEGORIES[key];
-                    return {
-                        id: `edge-org-${key}`,
+                setEdges((prev) => [
+                    ...prev,
+                    {
+                        id: `edge-org-${categoryKey}`,
                         source: 'org-center',
-                        target: `cat-${key}`,
+                        target: `cat-${categoryKey}`,
                         animated: true,
                         style: { stroke: cat.color, strokeWidth: 2, opacity: 0.6, strokeDasharray: '8 5' },
                         markerEnd: { type: MarkerType.ArrowClosed, color: cat.color },
-                    };
-                });
-
-                setNodes([orgNode, ...catNodes]);
-                setEdges(catEdges);
+                    },
+                ]);
             }, [setNodes, setEdges]);
 
-            // Start exploring the next category
+            // Start exploring the next category — reveals node on canvas
             const startNextCategory = useCallback(async (completed) => {
                 const remaining = CATEGORY_KEYS.filter((k) => !completed.includes(k));
                 if (remaining.length === 0) {
@@ -652,8 +743,9 @@
                 const next = remaining[0];
                 setCurrentCategory(next);
                 setCurrentQuestionIdx(1);
+                addCategoryToMap(next);
                 await addAIMessage(getCategoryIntro(next), 1000);
-            }, [orgName, addAIMessage]);
+            }, [orgName, addAIMessage, addCategoryToMap]);
 
             // Handle user message
             const handleSend = useCallback(async () => {
@@ -669,13 +761,14 @@
                     initializeMindmap(text);
 
                     await addAIMessage(
-                        `Great! I'm setting up the context map for **${text}**. You can see the organisation mindmap forming on the right.\n\nLet's start filling in the details. I'll walk you through each area.`,
+                        `Great! I'm setting up the context map for **${text}**. You can see the organisation mindmap forming on the right.\n\nLet's start filling in the details. I'll walk you through each area one by one.`,
                         1000
                     );
 
                     const firstCat = CATEGORY_KEYS[0];
                     setCurrentCategory(firstCat);
                     setCurrentQuestionIdx(1);
+                    addCategoryToMap(firstCat);
                     await addAIMessage(getCategoryIntro(firstCat), 1200);
 
                 } else if (phase === 'exploring' && currentCategory) {
@@ -713,7 +806,7 @@
                         1200
                     );
                 }
-            }, [input, isTyping, phase, currentCategory, currentQuestionIdx, orgName, categoriesCompleted, initializeMindmap, addAIMessage, addDetailNode, startNextCategory]);
+            }, [input, isTyping, phase, currentCategory, currentQuestionIdx, orgName, categoriesCompleted, initializeMindmap, addAIMessage, addDetailNode, addCategoryToMap, startNextCategory]);
 
             const handleKeyDown = (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -845,7 +938,7 @@
                                 minZoom={0.3}
                                 maxZoom={2}
                             >
-                                <Background variant="dots" gap={20} size={1} color="#d1d5db" />
+                                <Background variant="dots" gap={24} size={2} color="#94a3b8" />
                                 <Controls position="bottom-right" />
                                 <MiniMap
                                     nodeColor={(n) => {
