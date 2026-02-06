@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Funnel Improver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/reactflow@11.11.3/dist/style.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/reactflow@11.11.3/dist/umd/index.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+
+        /* Chat panel styles */
+        .chat-panel {
+            background: #0f0f0f;
+            color: #e5e5e5;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .chat-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .chat-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+        .chat-header p {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+        .msg-ai {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .msg-ai-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #d4a574, #c4956a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+        .msg-ai-bubble {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 85%;
+            color: #d4d4d4;
+        }
+        .msg-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .msg-user-bubble {
+            background: #2563eb;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 80%;
+            color: #ffffff;
+        }
+        .chat-input-area {
+            padding: 16px 24px 24px;
+            border-top: 1px solid #2a2a2a;
+        }
+        .chat-input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #e5e5e5;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: #2563eb; }
+        .chat-input::placeholder { color: #555; }
+        .chat-send-btn {
+            background: #2563eb;
+            border: none;
+            border-radius: 10px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .chat-send-btn:hover { background: #1d4ed8; }
+        .chat-send-btn:disabled { background: #333; cursor: not-allowed; }
+        .chat-send-btn svg { width: 18px; height: 18px; }
+
+        /* Quick action chips */
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .chip {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip:hover {
+            background: #222;
+            border-color: #2563eb;
+            color: #ddd;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #555;
+            animation: typingBounce 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* ReactFlow custom node styles */
+        .react-flow__background { background: #0a0a0a !important; }
+        .react-flow__controls button {
+            background: #1a1a1a !important;
+            border: 1px solid #333 !important;
+            color: #888 !important;
+        }
+        .react-flow__controls button:hover {
+            background: #222 !important;
+            color: #ddd !important;
+        }
+        .react-flow__minimap { background: #111 !important; }
+
+        /* Custom node styles */
+        .node-org {
+            background: linear-gradient(135deg, #1e3a5f, #1a2d47);
+            border: 2px solid #2563eb;
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+            min-width: 180px;
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.2);
+        }
+        .node-org-label { font-size: 10px; color: #93c5fd; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .node-org-name { font-size: 16px; }
+
+        .node-category {
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: #fff;
+            font-weight: 500;
+            font-size: 13px;
+            text-align: center;
+            min-width: 140px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .node-category-icon { font-size: 18px; margin-bottom: 4px; }
+        .node-category-label { font-size: 11px; opacity: 0.7; }
+        .node-category-name { font-size: 13px; font-weight: 600; }
+
+        .cat-audience { background: linear-gradient(135deg, #7c3aed, #6d28d9); border: 1.5px solid #8b5cf6; }
+        .cat-industry { background: linear-gradient(135deg, #059669, #047857); border: 1.5px solid #10b981; }
+        .cat-competitors { background: linear-gradient(135deg, #dc2626, #b91c1c); border: 1.5px solid #ef4444; }
+        .cat-benchmarks { background: linear-gradient(135deg, #d97706, #b45309); border: 1.5px solid #f59e0b; }
+        .cat-platform { background: linear-gradient(135deg, #0891b2, #0e7490); border: 1.5px solid #06b6d4; }
+        .cat-funnel { background: linear-gradient(135deg, #db2777, #be185d); border: 1.5px solid #ec4899; }
+
+        .node-detail {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 8px 14px;
+            color: #d4d4d4;
+            font-size: 12px;
+            max-width: 200px;
+            line-height: 1.4;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .node-detail-text { word-wrap: break-word; }
+
+        /* Edge animation */
+        .react-flow__edge-path {
+            stroke-dasharray: 5;
+            animation: dashFlow 1s linear infinite;
+        }
+        @keyframes dashFlow {
+            to { stroke-dashoffset: -10; }
+        }
+
+        /* Divider */
+        .panel-divider {
+            width: 1px;
+            background: #2a2a2a;
+            cursor: col-resize;
+            transition: background 0.2s;
+        }
+        .panel-divider:hover { background: #2563eb; }
+
+        /* Progress indicator */
+        .org-progress {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #111;
+            border-radius: 10px;
+            border: 1px solid #222;
+        }
+        .progress-bar-bg {
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
+        const {
+            ReactFlow: ReactFlowComponent,
+            ReactFlowProvider,
+            Background,
+            Controls,
+            MiniMap,
+            useNodesState,
+            useEdgesState,
+            MarkerType,
+        } = window.ReactFlow || {};
+
+        // ─── Category definitions ──────────────────────────────────────
+        const CATEGORIES = {
+            audience: {
+                icon: '👥',
+                label: 'Audience',
+                color: '#8b5cf6',
+                className: 'cat-audience',
+                questions: [
+                    "Who is your primary target audience? Describe their demographics, interests, and pain points.",
+                    "What does a typical customer journey look like for your audience?",
+                    "What motivates your audience to seek a solution like yours?",
+                ],
+            },
+            industry: {
+                icon: '🏭',
+                label: 'Industry',
+                color: '#10b981',
+                className: 'cat-industry',
+                questions: [
+                    "What industry does your organisation operate in?",
+                    "What are the current trends shaping your industry?",
+                    "What regulations or standards affect your business?",
+                ],
+            },
+            competitors: {
+                icon: '⚔️',
+                label: 'Competitors',
+                color: '#ef4444',
+                className: 'cat-competitors',
+                questions: [
+                    "Who are your top 3 competitors? What are their strengths?",
+                    "How do you differentiate from your competitors?",
+                    "What do competitors do better than you in their funnel?",
+                ],
+            },
+            benchmarks: {
+                icon: '📊',
+                label: 'Benchmarks',
+                color: '#f59e0b',
+                className: 'cat-benchmarks',
+                questions: [
+                    "What are your current conversion rates at each funnel stage?",
+                    "What KPIs do you track for your funnel performance?",
+                    "What conversion benchmarks are you aiming to hit?",
+                ],
+            },
+            platform: {
+                icon: '💻',
+                label: 'Platform',
+                color: '#06b6d4',
+                className: 'cat-platform',
+                questions: [
+                    "What platform(s) is your product/service built on?",
+                    "Describe the main user flows on your platform.",
+                    "What are the biggest UX friction points you've observed?",
+                ],
+            },
+            funnel: {
+                icon: '🔄',
+                label: 'Funnel Data',
+                color: '#ec4899',
+                className: 'cat-funnel',
+                questions: [
+                    "Walk me through your current funnel stages from awareness to conversion.",
+                    "Where do you see the biggest drop-off in your funnel?",
+                    "What experiments have you tried to improve your funnel?",
+                ],
+            },
+        };
+
+        const CATEGORY_KEYS = Object.keys(CATEGORIES);
+
+        // ─── AI conversation engine ────────────────────────────────────
+        const INTRO_MESSAGE = `Hi! I'm your AI Funnel Improver. Let's start by creating an organisation profile so I can understand your business context.
+
+**What's the name of your organisation?**`;
+
+        function getFollowUpMessage(orgName, category, answerSummary) {
+            const cat = CATEGORIES[category];
+            const responses = [
+                `Great insight. I've mapped that to your **${cat.label}** context. Let me dig deeper...`,
+                `Thanks — I'm adding that to your **${cat.label}** profile on the canvas. Let me ask a follow-up...`,
+                `Noted! I can see the picture forming on the mindmap. More on **${cat.label}**...`,
+                `That's really helpful for understanding your ${cat.label.toLowerCase()}. Building out that branch now...`,
+            ];
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
+        function getCategoryIntro(category) {
+            const cat = CATEGORIES[category];
+            return `Now let's explore your **${cat.icon} ${cat.label}**.\n\n${cat.questions[0]}`;
+        }
+
+        function getNextQuestion(category, questionIndex) {
+            const cat = CATEGORIES[category];
+            if (questionIndex < cat.questions.length) {
+                return cat.questions[questionIndex];
+            }
+            return null;
+        }
+
+        // ─── Mindmap layout helper ─────────────────────────────────────
+        function computeCategoryPosition(index, total) {
+            const centerX = 400;
+            const centerY = 300;
+            const radiusX = 320;
+            const radiusY = 250;
+            const startAngle = -Math.PI / 2;
+            const angle = startAngle + (index / total) * 2 * Math.PI;
+            return {
+                x: centerX + radiusX * Math.cos(angle),
+                y: centerY + radiusY * Math.sin(angle),
+            };
+        }
+
+        function computeDetailPosition(catPos, detailIndex, totalDetails) {
+            const offsetRadius = 150;
+            const spreadAngle = Math.PI * 0.6;
+            const startAngle = Math.atan2(catPos.y - 300, catPos.x - 400) - spreadAngle / 2;
+            const angle = startAngle + (detailIndex / Math.max(totalDetails - 1, 1)) * spreadAngle;
+            return {
+                x: catPos.x + offsetRadius * Math.cos(angle),
+                y: catPos.y + offsetRadius * Math.sin(angle),
+            };
+        }
+
+        // ─── Custom Node Components ────────────────────────────────────
+        function OrgNode({ data }) {
+            return (
+                <div className="node-org">
+                    <div className="node-org-label">Organisation</div>
+                    <div className="node-org-name">{data.label}</div>
+                </div>
+            );
+        }
+
+        function CategoryNode({ data }) {
+            return (
+                <div className={`node-category ${data.className}`}>
+                    <div className="node-category-icon">{data.icon}</div>
+                    <div className="node-category-name">{data.label}</div>
+                </div>
+            );
+        }
+
+        function DetailNode({ data }) {
+            return (
+                <div className="node-detail" style={{ borderColor: data.color || '#333' }}>
+                    <div className="node-detail-text">{data.label}</div>
+                </div>
+            );
+        }
+
+        const nodeTypes = { orgNode: OrgNode, categoryNode: CategoryNode, detailNode: DetailNode };
+
+        // ─── Main App ──────────────────────────────────────────────────
+        function App() {
+            const [messages, setMessages] = useState([
+                { role: 'ai', text: INTRO_MESSAGE },
+            ]);
+            const [input, setInput] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [orgName, setOrgName] = useState('');
+            const [phase, setPhase] = useState('ask-name'); // ask-name | exploring | complete
+            const [currentCategory, setCurrentCategory] = useState(null);
+            const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+            const [categoriesCompleted, setCategoriesCompleted] = useState([]);
+            const [orgData, setOrgData] = useState({});
+
+            const [nodes, setNodes, onNodesChange] = useNodesState([]);
+            const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+            const messagesEndRef = useRef(null);
+            const inputRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            };
+            useEffect(scrollToBottom, [messages, isTyping]);
+
+            // Simulate AI "thinking" delay
+            const addAIMessage = useCallback((text, delay = 800) => {
+                setIsTyping(true);
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        setMessages((prev) => [...prev, { role: 'ai', text }]);
+                        setIsTyping(false);
+                        resolve();
+                    }, delay + Math.random() * 600);
+                });
+            }, []);
+
+            // Add a detail node to the mindmap
+            const addDetailNode = useCallback((categoryKey, text) => {
+                const catIndex = CATEGORY_KEYS.indexOf(categoryKey);
+                const catPos = computeCategoryPosition(catIndex, CATEGORY_KEYS.length);
+                const catId = `cat-${categoryKey}`;
+
+                setNodes((prev) => {
+                    const existingDetails = prev.filter((n) => n.id.startsWith(`detail-${categoryKey}`));
+                    const detailIdx = existingDetails.length;
+                    const detailId = `detail-${categoryKey}-${detailIdx}`;
+                    const pos = computeDetailPosition(catPos, detailIdx, detailIdx + 1);
+                    const cat = CATEGORIES[categoryKey];
+
+                    return [
+                        ...prev,
+                        {
+                            id: detailId,
+                            type: 'detailNode',
+                            position: pos,
+                            data: { label: text.length > 80 ? text.substring(0, 77) + '...' : text, color: cat.color },
+                        },
+                    ];
+                });
+
+                setEdges((prev) => {
+                    const existingDetails = nodes.filter((n) => n.id.startsWith(`detail-${categoryKey}`));
+                    const detailIdx = existingDetails.length;
+                    const detailId = `detail-${categoryKey}-${detailIdx}`;
+                    const cat = CATEGORIES[categoryKey];
+
+                    return [
+                        ...prev,
+                        {
+                            id: `edge-${catId}-${detailId}`,
+                            source: catId,
+                            target: detailId,
+                            animated: true,
+                            style: { stroke: cat.color, strokeWidth: 1.5, opacity: 0.5 },
+                        },
+                    ];
+                });
+            }, [nodes, setNodes, setEdges]);
+
+            // Initialize the mindmap when org name is set
+            const initializeMindmap = useCallback((name) => {
+                const orgNode = {
+                    id: 'org-center',
+                    type: 'orgNode',
+                    position: { x: 400, y: 300 },
+                    data: { label: name },
+                };
+
+                const catNodes = CATEGORY_KEYS.map((key, i) => {
+                    const pos = computeCategoryPosition(i, CATEGORY_KEYS.length);
+                    const cat = CATEGORIES[key];
+                    return {
+                        id: `cat-${key}`,
+                        type: 'categoryNode',
+                        position: pos,
+                        data: { label: cat.label, icon: cat.icon, className: cat.className },
+                    };
+                });
+
+                const catEdges = CATEGORY_KEYS.map((key) => {
+                    const cat = CATEGORIES[key];
+                    return {
+                        id: `edge-org-${key}`,
+                        source: 'org-center',
+                        target: `cat-${key}`,
+                        animated: true,
+                        style: { stroke: cat.color, strokeWidth: 2, opacity: 0.6 },
+                        markerEnd: { type: MarkerType.ArrowClosed, color: cat.color },
+                    };
+                });
+
+                setNodes([orgNode, ...catNodes]);
+                setEdges(catEdges);
+            }, [setNodes, setEdges]);
+
+            // Start exploring the next category
+            const startNextCategory = useCallback(async (completed) => {
+                const remaining = CATEGORY_KEYS.filter((k) => !completed.includes(k));
+                if (remaining.length === 0) {
+                    setPhase('complete');
+                    await addAIMessage(
+                        `Excellent! I now have a comprehensive understanding of **${orgName}**. Your organisation mindmap is complete on the right.\n\nI've mapped out your **audience**, **industry**, **competitors**, **benchmarks**, **platform**, and **funnel data**. From here, I can start analyzing your funnel for improvement opportunities.\n\n**What would you like to focus on first?**`,
+                        1200
+                    );
+                    return;
+                }
+
+                const next = remaining[0];
+                setCurrentCategory(next);
+                setCurrentQuestionIdx(1);
+                await addAIMessage(getCategoryIntro(next), 1000);
+            }, [orgName, addAIMessage]);
+
+            // Handle user message
+            const handleSend = useCallback(async () => {
+                const text = input.trim();
+                if (!text || isTyping) return;
+
+                setInput('');
+                setMessages((prev) => [...prev, { role: 'user', text }]);
+
+                if (phase === 'ask-name') {
+                    setOrgName(text);
+                    setPhase('exploring');
+                    initializeMindmap(text);
+
+                    await addAIMessage(
+                        `Great! I'm setting up the context map for **${text}**. You can see the organisation mindmap forming on the right.\n\nLet's start filling in the details. I'll walk you through each area.`,
+                        1000
+                    );
+
+                    const firstCat = CATEGORY_KEYS[0];
+                    setCurrentCategory(firstCat);
+                    setCurrentQuestionIdx(1);
+                    await addAIMessage(getCategoryIntro(firstCat), 1200);
+
+                } else if (phase === 'exploring' && currentCategory) {
+                    // Add user's answer as a detail node
+                    addDetailNode(currentCategory, text);
+
+                    // Store the data
+                    setOrgData((prev) => ({
+                        ...prev,
+                        [currentCategory]: [...(prev[currentCategory] || []), text],
+                    }));
+
+                    // Check if more questions in this category
+                    const nextQ = getNextQuestion(currentCategory, currentQuestionIdx);
+                    if (nextQ) {
+                        const followUp = getFollowUpMessage(orgName, currentCategory, text);
+                        await addAIMessage(`${followUp}\n\n${nextQ}`, 1000);
+                        setCurrentQuestionIdx((prev) => prev + 1);
+                    } else {
+                        // Category complete, move to next
+                        const cat = CATEGORIES[currentCategory];
+                        const newCompleted = [...categoriesCompleted, currentCategory];
+                        setCategoriesCompleted(newCompleted);
+
+                        await addAIMessage(
+                            `I've got a solid picture of your **${cat.icon} ${cat.label}** context. Moving on...`,
+                            800
+                        );
+
+                        await startNextCategory(newCompleted);
+                    }
+                } else if (phase === 'complete') {
+                    await addAIMessage(
+                        `That's a great question. Based on what I've gathered about **${orgName}**, I can see several opportunities for funnel optimisation. Let me analyze the data on the mindmap and come back with specific recommendations.`,
+                        1200
+                    );
+                }
+            }, [input, isTyping, phase, currentCategory, currentQuestionIdx, orgName, categoriesCompleted, initializeMindmap, addAIMessage, addDetailNode, startNextCategory]);
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+            };
+
+            // Quick action chip click
+            const handleChip = (text) => {
+                setInput(text);
+                inputRef.current?.focus();
+            };
+
+            // Completion percentage
+            const completionPct = Math.round((categoriesCompleted.length / CATEGORY_KEYS.length) * 100);
+
+            // Chips based on current phase
+            const chips = useMemo(() => {
+                if (phase === 'ask-name') {
+                    return ['Acme Corp', 'My Startup', 'TechFlow Inc'];
+                }
+                if (phase === 'exploring' && currentCategory) {
+                    const cat = CATEGORIES[currentCategory];
+                    if (currentCategory === 'audience') return ['B2B SaaS buyers', 'Gen Z consumers', 'Enterprise decision-makers'];
+                    if (currentCategory === 'industry') return ['SaaS / Tech', 'E-commerce', 'Financial Services'];
+                    if (currentCategory === 'competitors') return ['We have 3 main competitors', 'It is a crowded market', 'We are a market leader'];
+                    if (currentCategory === 'benchmarks') return ['~2% conversion rate', 'We track MRR and churn', '30% trial-to-paid'];
+                    if (currentCategory === 'platform') return ['Web application (React)', 'Mobile app (iOS/Android)', 'Shopify storefront'];
+                    if (currentCategory === 'funnel') return ['Ads → Landing → Signup → Onboard', 'SEO → Blog → Trial → Paid', 'Social → Product Page → Cart → Checkout'];
+                }
+                return [];
+            }, [phase, currentCategory]);
+
+            return (
+                <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#0a0a0a' }}>
+                    {/* Left: Chat Panel */}
+                    <div style={{ width: '420px', minWidth: '360px', flexShrink: 0 }} className="chat-panel">
+                        <div className="chat-header">
+                            <h1>AI Funnel Improver</h1>
+                            <p>Build your organisation context</p>
+                            {phase !== 'ask-name' && (
+                                <div className="org-progress">
+                                    <div className="progress-label">
+                                        <span>Organisation Profile</span>
+                                        <span>{completionPct}%</span>
+                                    </div>
+                                    <div className="progress-bar-bg">
+                                        <div className="progress-bar-fill" style={{ width: `${completionPct}%` }} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="chat-messages">
+                            {messages.map((msg, i) => (
+                                msg.role === 'ai' ? (
+                                    <div key={i} className="msg-ai">
+                                        <div className="msg-ai-avatar">✦</div>
+                                        <div className="msg-ai-bubble" dangerouslySetInnerHTML={{
+                                            __html: msg.text
+                                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                .replace(/\n/g, '<br/>')
+                                        }} />
+                                    </div>
+                                ) : (
+                                    <div key={i} className="msg-user">
+                                        <div className="msg-user-bubble">{msg.text}</div>
+                                    </div>
+                                )
+                            ))}
+                            {isTyping && (
+                                <div className="msg-ai">
+                                    <div className="msg-ai-avatar">✦</div>
+                                    <div className="msg-ai-bubble">
+                                        <div className="typing-indicator">
+                                            <div className="typing-dot" />
+                                            <div className="typing-dot" />
+                                            <div className="typing-dot" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        <div className="chat-input-area">
+                            {chips.length > 0 && (
+                                <div className="chip-row">
+                                    {chips.map((chip, i) => (
+                                        <div key={i} className="chip" onClick={() => handleChip(chip)}>{chip}</div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="chat-input-wrapper" style={{ marginTop: chips.length > 0 ? '10px' : '0' }}>
+                                <input
+                                    ref={inputRef}
+                                    className="chat-input"
+                                    placeholder={phase === 'ask-name' ? 'Enter your organisation name...' : 'Type your answer...'}
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    disabled={isTyping}
+                                />
+                                <button className="chat-send-btn" onClick={handleSend} disabled={!input.trim() || isTyping}>
+                                    <svg fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path d="M22 2L11 13" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <path d="M22 2L15 22L11 13L2 9L22 2Z" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="panel-divider" />
+
+                    {/* Right: ReactFlow Canvas */}
+                    <div style={{ flex: 1, height: '100%' }}>
+                        <ReactFlowProvider>
+                            <ReactFlowComponent
+                                nodes={nodes}
+                                edges={edges}
+                                onNodesChange={onNodesChange}
+                                onEdgesChange={onEdgesChange}
+                                nodeTypes={nodeTypes}
+                                fitView
+                                fitViewOptions={{ padding: 0.3 }}
+                                proOptions={{ hideAttribution: true }}
+                                defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
+                                minZoom={0.3}
+                                maxZoom={2}
+                            >
+                                <Background variant="dots" gap={20} size={1} color="#222" />
+                                <Controls position="bottom-right" />
+                                <MiniMap
+                                    nodeColor={(n) => {
+                                        if (n.type === 'orgNode') return '#2563eb';
+                                        if (n.type === 'categoryNode') return n.data?.className?.includes('audience') ? '#8b5cf6'
+                                            : n.data?.className?.includes('industry') ? '#10b981'
+                                            : n.data?.className?.includes('competitors') ? '#ef4444'
+                                            : n.data?.className?.includes('benchmarks') ? '#f59e0b'
+                                            : n.data?.className?.includes('platform') ? '#06b6d4'
+                                            : '#ec4899';
+                                        return '#555';
+                                    }}
+                                    maskColor="rgba(0,0,0,0.8)"
+                                    style={{ background: '#111' }}
+                                />
+                            </ReactFlowComponent>
+                        </ReactFlowProvider>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
