@@ -291,23 +291,25 @@
 
         .node-detail {
             background: #ffffff;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px 20px;
             color: #374151;
-            font-size: 12px;
-            min-width: 160px;
-            max-width: 260px;
+            font-size: 13px;
+            min-width: 190px;
+            max-width: 280px;
             line-height: 1.5;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             animation: fadeInUp 0.35s ease-out both;
         }
         .node-detail-title {
-            font-weight: 600;
-            font-size: 12px;
+            font-weight: 700;
+            font-size: 14px;
             color: #111827;
-            margin-bottom: 6px;
-            letter-spacing: -0.2px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #f3f4f6;
+            text-transform: lowercase;
         }
         .node-detail-points {
             list-style: none;
@@ -315,21 +317,26 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 6px;
         }
         .node-detail-points li {
             position: relative;
-            padding-left: 12px;
-            font-size: 11px;
+            padding-left: 14px;
+            font-size: 12px;
             color: #4b5563;
-            line-height: 1.45;
+            line-height: 1.5;
             word-wrap: break-word;
         }
         .node-detail-points li::before {
-            content: '–';
+            content: '';
             position: absolute;
             left: 0;
-            color: #9ca3af;
+            top: 6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            border: 1.5px solid #9ca3af;
+            background: transparent;
         }
         .node-detail-text { word-wrap: break-word; }
 
@@ -411,7 +418,7 @@
                 label: 'Audience',
                 color: '#8b5cf6',
                 className: 'cat-audience',
-                titles: ['Target Audience', 'Customer Journey', 'Motivation'],
+                titles: ['target audience', 'customer journey', 'motivation'],
                 questions: [
                     "Who is your primary target audience? Describe their demographics, interests, and pain points.",
                     "What does a typical customer journey look like for your audience?",
@@ -423,7 +430,7 @@
                 label: 'Industry',
                 color: '#10b981',
                 className: 'cat-industry',
-                titles: ['Industry', 'Trends', 'Regulations'],
+                titles: ['industry', 'trends', 'regulations'],
                 questions: [
                     "What industry does your organisation operate in?",
                     "What are the current trends shaping your industry?",
@@ -435,7 +442,7 @@
                 label: 'Competitors',
                 color: '#ef4444',
                 className: 'cat-competitors',
-                titles: ['Key Competitors', 'Differentiation', 'Competitor Strengths'],
+                titles: ['key competitors', 'differentiation', 'competitor strengths'],
                 questions: [
                     "Who are your top 3 competitors? What are their strengths?",
                     "How do you differentiate from your competitors?",
@@ -447,7 +454,7 @@
                 label: 'Benchmarks',
                 color: '#f59e0b',
                 className: 'cat-benchmarks',
-                titles: ['Conversion Rates', 'KPIs', 'Target Benchmarks'],
+                titles: ['conversion rates', 'KPIs', 'target benchmarks'],
                 questions: [
                     "What are your current conversion rates at each funnel stage?",
                     "What KPIs do you track for your funnel performance?",
@@ -459,7 +466,7 @@
                 label: 'Platform',
                 color: '#06b6d4',
                 className: 'cat-platform',
-                titles: ['Platform', 'User Flows', 'UX Friction'],
+                titles: ['platform', 'user flows', 'UX friction'],
                 questions: [
                     "What platform(s) is your product/service built on?",
                     "Describe the main user flows on your platform.",
@@ -471,7 +478,7 @@
                 label: 'Funnel Data',
                 color: '#ec4899',
                 className: 'cat-funnel',
-                titles: ['Funnel Stages', 'Drop-off Points', 'Experiments'],
+                titles: ['funnel stages', 'drop-off points', 'experiments'],
                 questions: [
                     "Walk me through your current funnel stages from awareness to conversion.",
                     "Where do you see the biggest drop-off in your funnel?",
