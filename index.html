@@ -53,6 +53,7 @@
             display: flex;
             gap: 12px;
             align-items: flex-start;
+            animation: fadeInUp 0.4s ease-out both;
         }
         .msg-ai-avatar {
             width: 28px;
@@ -74,10 +75,12 @@
             line-height: 1.6;
             max-width: 85%;
             color: #374151;
+            animation: fadeInUp 0.4s ease-out 0.1s both;
         }
         .msg-user {
             display: flex;
             justify-content: flex-end;
+            animation: popIn 0.35s ease-out both;
         }
         .msg-user-bubble {
             background: #2563eb;
@@ -143,6 +146,7 @@
             color: #6b7280;
             cursor: pointer;
             transition: all 0.2s;
+            animation: chipFadeIn 0.3s ease-out both;
         }
         .chip:hover {
             background: #e5e7eb;
@@ -150,6 +154,63 @@
             color: #111827;
         }
 
+        /* Message fade-in animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9) translateY(8px);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.02) translateY(-2px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        /* Chip stagger animations */
+        @keyframes chipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .chip:nth-child(1) { animation-delay: 0.05s; }
+        .chip:nth-child(2) { animation-delay: 0.12s; }
+        .chip:nth-child(3) { animation-delay: 0.19s; }
+        .chip:nth-child(4) { animation-delay: 0.26s; }
+        .chip:nth-child(5) { animation-delay: 0.33s; }
+
+        /* Node appearance animations */
+        @keyframes nodePopIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+            70% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
         /* Typing indicator */
         .typing-indicator {
             display: flex;
@@ -195,6 +256,7 @@
             text-align: center;
             min-width: 180px;
             box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
+            animation: nodePopIn 0.5s ease-out both;
         }
         .node-org-label { font-size: 10px; color: #2563eb; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
         .node-org-name { font-size: 16px; }
@@ -208,6 +270,7 @@
             text-align: center;
             min-width: 140px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            animation: nodePopIn 0.4s ease-out both;
         }
         .node-category-icon { font-size: 18px; margin-bottom: 4px; }
         .node-category-label { font-size: 11px; opacity: 0.7; }
@@ -230,16 +293,24 @@
             max-width: 200px;
             line-height: 1.4;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            animation: fadeInUp 0.35s ease-out both;
         }
         .node-detail-text { word-wrap: break-word; }
 
-        /* Edge animation */
+        /* Edge animation - dotted flowing lines */
         .react-flow__edge-path {
-            stroke-dasharray: 5;
-            animation: dashFlow 1s linear infinite;
+            stroke-dasharray: 6 4;
+            animation: dashFlow 1.2s linear infinite;
         }
         @keyframes dashFlow {
-            to { stroke-dashoffset: -10; }
+            to { stroke-dashoffset: -20; }
+        }
+        @keyframes edgeFadeIn {
+            from { opacity: 0; stroke-dashoffset: 40; }
+            to { opacity: 1; stroke-dashoffset: 0; }
+        }
+        .react-flow__edge {
+            animation: edgeFadeIn 0.6s ease-out both;
         }
 
         /* Divider */
@@ -524,7 +595,7 @@
                             source: catId,
                             target: detailId,
                             animated: true,
-                            style: { stroke: cat.color, strokeWidth: 1.5, opacity: 0.5 },
+                            style: { stroke: cat.color, strokeWidth: 1.5, opacity: 0.6, strokeDasharray: '6 4' },
                         },
                     ];
                 });
@@ -557,7 +628,7 @@
                         source: 'org-center',
                         target: `cat-${key}`,
                         animated: true,
-                        style: { stroke: cat.color, strokeWidth: 2, opacity: 0.6 },
+                        style: { stroke: cat.color, strokeWidth: 2, opacity: 0.6, strokeDasharray: '8 5' },
                         markerEnd: { type: MarkerType.ArrowClosed, color: cat.color },
                     };
                 });
