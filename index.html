@@ -522,8 +522,8 @@
         function computeCategoryPosition(index, total) {
             const centerX = 400;
             const centerY = 300;
-            const radiusX = 320;
-            const radiusY = 250;
+            const radiusX = 400;
+            const radiusY = 320;
             const startAngle = -Math.PI / 2;
             const angle = startAngle + (index / total) * 2 * Math.PI;
             return {
@@ -532,15 +532,44 @@
             };
         }
 
-        function computeDetailPosition(catPos, detailIndex, totalDetails) {
-            const offsetRadius = 150;
-            const spreadAngle = Math.PI * 0.6;
-            const startAngle = Math.atan2(catPos.y - 300, catPos.x - 400) - spreadAngle / 2;
+        function computeDetailPosition(catPos, detailIndex, totalDetails, existingNodes) {
+            const offsetRadius = 180;
+            const spreadAngle = Math.PI * 0.8;
+            const outwardAngle = Math.atan2(catPos.y - 300, catPos.x - 400);
+            const startAngle = outwardAngle - spreadAngle / 2;
             const angle = startAngle + (detailIndex / Math.max(totalDetails - 1, 1)) * spreadAngle;
-            return {
+            let pos = {
                 x: catPos.x + offsetRadius * Math.cos(angle),
                 y: catPos.y + offsetRadius * Math.sin(angle),
             };
+
+            // Collision avoidance: nudge away from existing nodes
+            if (existingNodes && existingNodes.length > 0) {
+                const nodeW = 260;
+                const nodeH = 120;
+                for (let attempt = 0; attempt < 12; attempt++) {
+                    let hasOverlap = false;
+                    for (const n of existingNodes) {
+                        const nW = n.type === 'orgNode' ? 200 : n.type === 'categoryNode' ? 160 : nodeW;
+                        const nH = n.type === 'orgNode' ? 80 : n.type === 'categoryNode' ? 70 : nodeH;
+                        const overlapX = (nodeW / 2 + nW / 2 + 20) - Math.abs(pos.x - n.position.x);
+                        const overlapY = (nodeH / 2 + nH / 2 + 20) - Math.abs(pos.y - n.position.y);
+                        if (overlapX > 0 && overlapY > 0) {
+                            hasOverlap = true;
+                            break;
+                        }
+                    }
+                    if (!hasOverlap) break;
+                    // Push outward further from the category
+                    const pushRadius = offsetRadius + (attempt + 1) * 60;
+                    const jitterAngle = angle + (attempt % 2 === 0 ? 1 : -1) * (Math.floor(attempt / 2) + 1) * 0.15;
+                    pos = {
+                        x: catPos.x + pushRadius * Math.cos(jitterAngle),
+                        y: catPos.y + pushRadius * Math.sin(jitterAngle),
+                    };
+                }
+            }
+            return pos;
         }
 
         // ─── Custom Node Components ────────────────────────────────────
@@ -699,14 +728,20 @@
                 const points = parseAnswerToPoints(text);
                 const title = cat.titles[questionIdx] || cat.label;
 
+                // Shared ref so the edge callback can read the position computed by setNodes
+                const placedPos = { current: null };
+                let placedDetailId = '';
+
                 setNodes((prev) => {
                     const existingDetails = prev.filter((n) => n.id.startsWith(`detail-${categoryKey}`));
                     const detailIdx = existingDetails.length;
-                    const pos = computeDetailPosition(catPos, detailIdx, detailIdx + 1);
+                    const pos = computeDetailPosition(catPos, detailIdx, detailIdx + 1, prev);
+                    placedPos.current = pos;
+                    placedDetailId = `detail-${categoryKey}-${detailIdx}`;
                     return [
                         ...prev,
                         {
-                            id: `detail-${categoryKey}-${detailIdx}`,
+                            id: placedDetailId,
                             type: 'detailNode',
                             position: pos,
                             data: { title, points, color: cat.color },
@@ -718,7 +753,7 @@
                     const existingDetailEdges = prev.filter((e) => e.id.startsWith(`edge-${catId}-detail`));
                     const detailIdx = existingDetailEdges.length;
                     const detailId = `detail-${categoryKey}-${detailIdx}`;
-                    const detailPos = computeDetailPosition(catPos, detailIdx, detailIdx + 1);
+                    const detailPos = placedPos.current || computeDetailPosition(catPos, detailIdx, detailIdx + 1, []);
                     const handles = getCatDetailHandles(catPos, detailPos);
                     return [
                         ...prev,
