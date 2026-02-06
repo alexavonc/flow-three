@@ -243,6 +243,12 @@
             color: #111827 !important;
         }
         .react-flow__minimap { background: #f3f4f6 !important; }
+        .react-flow__handle {
+            width: 8px !important;
+            height: 8px !important;
+            background: #cbd5e1 !important;
+            border: 1.5px solid #94a3b8 !important;
+        }
 
         /* Custom node styles */
         .node-org {
@@ -361,6 +367,8 @@
             Background,
             Controls,
             MiniMap,
+            Handle,
+            Position,
             useNodesState,
             useEdgesState,
             MarkerType,
@@ -496,6 +504,10 @@
         function OrgNode({ data }) {
             return (
                 <div className="node-org">
+                    <Handle type="source" position={Position.Top} id="top" />
+                    <Handle type="source" position={Position.Right} id="right" />
+                    <Handle type="source" position={Position.Bottom} id="bottom" />
+                    <Handle type="source" position={Position.Left} id="left" />
                     <div className="node-org-label">Organisation</div>
                     <div className="node-org-name">{data.label}</div>
                 </div>
@@ -505,6 +517,14 @@
         function CategoryNode({ data }) {
             return (
                 <div className={`node-category ${data.className}`}>
+                    <Handle type="target" position={Position.Top} id="t-top" />
+                    <Handle type="target" position={Position.Right} id="t-right" />
+                    <Handle type="target" position={Position.Bottom} id="t-bottom" />
+                    <Handle type="target" position={Position.Left} id="t-left" />
+                    <Handle type="source" position={Position.Top} id="s-top" />
+                    <Handle type="source" position={Position.Right} id="s-right" />
+                    <Handle type="source" position={Position.Bottom} id="s-bottom" />
+                    <Handle type="source" position={Position.Left} id="s-left" />
                     <div className="node-category-icon">{data.icon}</div>
                     <div className="node-category-name">{data.label}</div>
                 </div>
@@ -514,9 +534,40 @@
         function DetailNode({ data }) {
             return (
                 <div className="node-detail" style={{ borderColor: data.color || '#d1d5db' }}>
+                    <Handle type="target" position={Position.Top} id="t-top" />
+                    <Handle type="target" position={Position.Right} id="t-right" />
+                    <Handle type="target" position={Position.Bottom} id="t-bottom" />
+                    <Handle type="target" position={Position.Left} id="t-left" />
                     <div className="node-detail-text">{data.label}</div>
                 </div>
             );
+        }
+
+        // Pick the best handle pair for an edge between two positioned nodes
+        function getBestHandles(sourcePos, targetPos) {
+            const dx = targetPos.x - sourcePos.x;
+            const dy = targetPos.y - sourcePos.y;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                return dx > 0
+                    ? { sourceHandle: 'right', targetHandle: 't-left' }
+                    : { sourceHandle: 'left', targetHandle: 't-right' };
+            }
+            return dy > 0
+                ? { sourceHandle: 'bottom', targetHandle: 't-top' }
+                : { sourceHandle: 'top', targetHandle: 't-bottom' };
+        }
+        // Same but for category→detail (source handles prefixed with s-)
+        function getCatDetailHandles(sourcePos, targetPos) {
+            const dx = targetPos.x - sourcePos.x;
+            const dy = targetPos.y - sourcePos.y;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                return dx > 0
+                    ? { sourceHandle: 's-right', targetHandle: 't-left' }
+                    : { sourceHandle: 's-left', targetHandle: 't-right' };
+            }
+            return dy > 0
+                ? { sourceHandle: 's-bottom', targetHandle: 't-top' }
+                : { sourceHandle: 's-top', targetHandle: 't-bottom' };
         }
 
         const nodeTypes = { orgNode: OrgNode, categoryNode: CategoryNode, detailNode: DetailNode };
@@ -568,48 +619,78 @@
                 });
             }, []);
 
-            // Add a detail node to the mindmap
-            const addDetailNode = useCallback((categoryKey, text) => {
+            // Parse an answer into multiple distinct points
+            function parseAnswerToPoints(text) {
+                // Split on sentence boundaries, semicolons, or list-style commas
+                let points = text
+                    .split(/(?:\.\s+|;\s*|\n+|,\s+(?:and|or|&)\s+)/i)
+                    .map(s => s.trim().replace(/\.$/, ''))
+                    .filter(s => s.length >= 15);
+
+                // If only one point, try splitting on commas
+                if (points.length <= 1) {
+                    points = text.split(/,\s+/)
+                        .map(s => s.trim().replace(/\.$/, ''))
+                        .filter(s => s.length >= 15);
+                }
+
+                // Fallback: use the full text as a single point
+                if (points.length === 0) points = [text.trim()];
+
+                // Cap at 4 points, truncate long ones
+                return points.slice(0, 4).map(p =>
+                    p.length > 65 ? p.substring(0, 62) + '...' : p
+                );
+            }
+
+            // Add detail nodes to the mindmap — splits answer into multiple points
+            const addDetailNodes = useCallback((categoryKey, text) => {
                 const catIndex = CATEGORY_KEYS.indexOf(categoryKey);
                 const catPos = computeCategoryPosition(catIndex, CATEGORY_KEYS.length);
                 const catId = `cat-${categoryKey}`;
+                const cat = CATEGORIES[categoryKey];
+                const points = parseAnswerToPoints(text);
 
                 setNodes((prev) => {
                     const existingDetails = prev.filter((n) => n.id.startsWith(`detail-${categoryKey}`));
-                    const detailIdx = existingDetails.length;
-                    const detailId = `detail-${categoryKey}-${detailIdx}`;
-                    const pos = computeDetailPosition(catPos, detailIdx, detailIdx + 1);
-                    const cat = CATEGORIES[categoryKey];
+                    const baseIdx = existingDetails.length;
+                    const totalAfter = baseIdx + points.length;
 
-                    return [
-                        ...prev,
-                        {
-                            id: detailId,
+                    const newNodes = points.map((point, i) => {
+                        const idx = baseIdx + i;
+                        const pos = computeDetailPosition(catPos, idx, totalAfter);
+                        return {
+                            id: `detail-${categoryKey}-${idx}`,
                             type: 'detailNode',
                             position: pos,
-                            data: { label: text.length > 80 ? text.substring(0, 77) + '...' : text, color: cat.color },
-                        },
-                    ];
+                            data: { label: point, color: cat.color },
+                        };
+                    });
+                    return [...prev, ...newNodes];
                 });
 
                 setEdges((prev) => {
-                    const existingDetails = nodes.filter((n) => n.id.startsWith(`detail-${categoryKey}`));
-                    const detailIdx = existingDetails.length;
-                    const detailId = `detail-${categoryKey}-${detailIdx}`;
-                    const cat = CATEGORIES[categoryKey];
+                    // Use functional count from prev edges to stay in sync
+                    const existingDetailEdges = prev.filter((e) => e.id.startsWith(`edge-${catId}-detail`));
+                    const baseIdx = existingDetailEdges.length;
 
-                    return [
-                        ...prev,
-                        {
+                    const newEdges = points.map((_, i) => {
+                        const idx = baseIdx + i;
+                        const detailId = `detail-${categoryKey}-${idx}`;
+                        const detailPos = computeDetailPosition(catPos, idx, baseIdx + points.length);
+                        const handles = getCatDetailHandles(catPos, detailPos);
+                        return {
                             id: `edge-${catId}-${detailId}`,
                             source: catId,
                             target: detailId,
-                            animated: true,
-                            style: { stroke: cat.color, strokeWidth: 1.5, opacity: 0.6, strokeDasharray: '6 4' },
-                        },
-                    ];
+                            sourceHandle: handles.sourceHandle,
+                            targetHandle: handles.targetHandle,
+                            style: { stroke: cat.color, strokeWidth: 1.5, opacity: 0.7, strokeDasharray: '6 4' },
+                        };
+                    });
+                    return [...prev, ...newEdges];
                 });
-            }, [nodes, setNodes, setEdges]);
+            }, [setNodes, setEdges]);
 
             // Initialize the mindmap when org name is set — only org node
             const initializeMindmap = useCallback((name) => {
@@ -628,6 +709,8 @@
                 const catIndex = CATEGORY_KEYS.indexOf(categoryKey);
                 const pos = computeCategoryPosition(catIndex, CATEGORY_KEYS.length);
                 const cat = CATEGORIES[categoryKey];
+                const orgPos = { x: 400, y: 300 };
+                const handles = getBestHandles(orgPos, pos);
 
                 setNodes((prev) => {
                     return [
@@ -647,9 +730,9 @@
                         id: `edge-org-${categoryKey}`,
                         source: 'org-center',
                         target: `cat-${categoryKey}`,
-                        animated: true,
-                        style: { stroke: cat.color, strokeWidth: 2, opacity: 0.6, strokeDasharray: '8 5' },
-                        markerEnd: { type: MarkerType.ArrowClosed, color: cat.color },
+                        sourceHandle: handles.sourceHandle,
+                        targetHandle: handles.targetHandle,
+                        style: { stroke: cat.color, strokeWidth: 2, opacity: 0.7, strokeDasharray: '8 5' },
                     },
                 ]);
             }, [setNodes, setEdges]);
@@ -698,8 +781,8 @@
                     await addAIMessage(getCategoryIntro(firstCat), 1200);
 
                 } else if (phase === 'exploring' && currentCategory) {
-                    // Add user's answer as a detail node
-                    addDetailNode(currentCategory, text);
+                    // Parse answer into multiple points and add as detail nodes
+                    addDetailNodes(currentCategory, text);
 
                     // Store the data
                     setOrgData((prev) => ({
@@ -732,7 +815,7 @@
                         1200
                     );
                 }
-            }, [input, isTyping, phase, currentCategory, currentQuestionIdx, orgName, categoriesCompleted, initializeMindmap, addAIMessage, addDetailNode, addCategoryToMap, startNextCategory]);
+            }, [input, isTyping, phase, currentCategory, currentQuestionIdx, orgName, categoriesCompleted, initializeMindmap, addAIMessage, addDetailNodes, addCategoryToMap, startNextCategory]);
 
             const handleKeyDown = (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
