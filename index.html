@@ -16,25 +16,25 @@
 
         /* Chat panel styles */
         .chat-panel {
-            background: #0f0f0f;
-            color: #e5e5e5;
+            background: #ffffff;
+            color: #374151;
             display: flex;
             flex-direction: column;
             height: 100%;
         }
         .chat-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid #e5e7eb;
         }
         .chat-header h1 {
             font-size: 18px;
             font-weight: 600;
-            color: #ffffff;
+            color: #111827;
             letter-spacing: -0.3px;
         }
         .chat-header p {
             font-size: 12px;
-            color: #888;
+            color: #6b7280;
             margin-top: 4px;
         }
         .chat-messages {
@@ -47,7 +47,7 @@
         }
         .chat-messages::-webkit-scrollbar { width: 4px; }
         .chat-messages::-webkit-scrollbar-track { background: transparent; }
-        .chat-messages::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
 
         .msg-ai {
             display: flex;
@@ -66,14 +66,14 @@
             font-size: 14px;
         }
         .msg-ai-bubble {
-            background: #1a1a1a;
-            border: 1px solid #2a2a2a;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
             border-radius: 12px;
             padding: 12px 16px;
             font-size: 14px;
             line-height: 1.6;
             max-width: 85%;
-            color: #d4d4d4;
+            color: #374151;
         }
         .msg-user {
             display: flex;
@@ -90,7 +90,7 @@
         }
         .chat-input-area {
             padding: 16px 24px 24px;
-            border-top: 1px solid #2a2a2a;
+            border-top: 1px solid #e5e7eb;
         }
         .chat-input-wrapper {
             display: flex;
@@ -99,17 +99,17 @@
         }
         .chat-input {
             flex: 1;
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
             border-radius: 12px;
             padding: 12px 16px;
-            color: #e5e5e5;
+            color: #111827;
             font-size: 14px;
             outline: none;
             transition: border-color 0.2s;
         }
         .chat-input:focus { border-color: #2563eb; }
-        .chat-input::placeholder { color: #555; }
+        .chat-input::placeholder { color: #9ca3af; }
         .chat-send-btn {
             background: #2563eb;
             border: none;
@@ -124,7 +124,7 @@
             flex-shrink: 0;
         }
         .chat-send-btn:hover { background: #1d4ed8; }
-        .chat-send-btn:disabled { background: #333; cursor: not-allowed; }
+        .chat-send-btn:disabled { background: #d1d5db; cursor: not-allowed; }
         .chat-send-btn svg { width: 18px; height: 18px; }
 
         /* Quick action chips */
@@ -135,19 +135,19 @@
             margin-top: 10px;
         }
         .chip {
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
             border-radius: 20px;
             padding: 6px 14px;
             font-size: 12px;
-            color: #aaa;
+            color: #6b7280;
             cursor: pointer;
             transition: all 0.2s;
         }
         .chip:hover {
-            background: #222;
+            background: #e5e7eb;
             border-color: #2563eb;
-            color: #ddd;
+            color: #111827;
         }
 
         /* Typing indicator */
@@ -160,7 +160,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #555;
+            background: #9ca3af;
             animation: typingBounce 1.4s infinite;
         }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -171,32 +171,32 @@
         }
 
         /* ReactFlow custom node styles */
-        .react-flow__background { background: #0a0a0a !important; }
+        .react-flow__background { background: #f9fafb !important; }
         .react-flow__controls button {
-            background: #1a1a1a !important;
-            border: 1px solid #333 !important;
-            color: #888 !important;
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #6b7280 !important;
         }
         .react-flow__controls button:hover {
-            background: #222 !important;
-            color: #ddd !important;
+            background: #f3f4f6 !important;
+            color: #111827 !important;
         }
-        .react-flow__minimap { background: #111 !important; }
+        .react-flow__minimap { background: #f3f4f6 !important; }
 
         /* Custom node styles */
         .node-org {
-            background: linear-gradient(135deg, #1e3a5f, #1a2d47);
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
             border: 2px solid #2563eb;
             border-radius: 16px;
             padding: 16px 24px;
-            color: #fff;
+            color: #1e3a5f;
             font-weight: 600;
             font-size: 15px;
             text-align: center;
             min-width: 180px;
-            box-shadow: 0 0 30px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.15);
         }
-        .node-org-label { font-size: 10px; color: #93c5fd; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .node-org-label { font-size: 10px; color: #2563eb; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
         .node-org-name { font-size: 16px; }
 
         .node-category {
@@ -207,7 +207,7 @@
             font-size: 13px;
             text-align: center;
             min-width: 140px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .node-category-icon { font-size: 18px; margin-bottom: 4px; }
         .node-category-label { font-size: 11px; opacity: 0.7; }
@@ -221,15 +221,15 @@
         .cat-funnel { background: linear-gradient(135deg, #db2777, #be185d); border: 1.5px solid #ec4899; }
 
         .node-detail {
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
             border-radius: 10px;
             padding: 8px 14px;
-            color: #d4d4d4;
+            color: #374151;
             font-size: 12px;
             max-width: 200px;
             line-height: 1.4;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
         .node-detail-text { word-wrap: break-word; }
 
@@ -245,7 +245,7 @@
         /* Divider */
         .panel-divider {
             width: 1px;
-            background: #2a2a2a;
+            background: #e5e7eb;
             cursor: col-resize;
             transition: background 0.2s;
         }
@@ -255,13 +255,13 @@
         .org-progress {
             margin-top: 12px;
             padding: 12px 16px;
-            background: #111;
+            background: #f3f4f6;
             border-radius: 10px;
-            border: 1px solid #222;
+            border: 1px solid #e5e7eb;
         }
         .progress-bar-bg {
             height: 4px;
-            background: #222;
+            background: #e5e7eb;
             border-radius: 2px;
             overflow: hidden;
             margin-top: 8px;
@@ -276,7 +276,7 @@
             display: flex;
             justify-content: space-between;
             font-size: 11px;
-            color: #666;
+            color: #6b7280;
         }
     </style>
 </head>
@@ -442,7 +442,7 @@
 
         function DetailNode({ data }) {
             return (
-                <div className="node-detail" style={{ borderColor: data.color || '#333' }}>
+                <div className="node-detail" style={{ borderColor: data.color || '#d1d5db' }}>
                     <div className="node-detail-text">{data.label}</div>
                 </div>
             );
@@ -678,7 +678,7 @@
             }, [phase, currentCategory]);
 
             return (
-                <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#0a0a0a' }}>
+                <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f9fafb' }}>
                     {/* Left: Chat Panel */}
                     <div style={{ width: '420px', minWidth: '360px', flexShrink: 0 }} className="chat-panel">
                         <div className="chat-header">
@@ -774,7 +774,7 @@
                                 minZoom={0.3}
                                 maxZoom={2}
                             >
-                                <Background variant="dots" gap={20} size={1} color="#222" />
+                                <Background variant="dots" gap={20} size={1} color="#d1d5db" />
                                 <Controls position="bottom-right" />
                                 <MiniMap
                                     nodeColor={(n) => {
@@ -785,10 +785,10 @@
                                             : n.data?.className?.includes('benchmarks') ? '#f59e0b'
                                             : n.data?.className?.includes('platform') ? '#06b6d4'
                                             : '#ec4899';
-                                        return '#555';
+                                        return '#9ca3af';
                                     }}
-                                    maskColor="rgba(0,0,0,0.8)"
-                                    style={{ background: '#111' }}
+                                    maskColor="rgba(255,255,255,0.8)"
+                                    style={{ background: '#f3f4f6' }}
                                 />
                             </ReactFlowComponent>
                         </ReactFlowProvider>
