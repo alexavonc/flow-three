@@ -211,70 +211,6 @@
                 transform: scale(1);
             }
         }
-        /* Breathing/thinking node on canvas */
-        .node-thinking {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.12), rgba(124, 58, 237, 0.06));
-            border: 2px solid rgba(37, 99, 235, 0.18);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: breathe 3s ease-in-out infinite;
-            position: relative;
-        }
-        .node-thinking::before,
-        .node-thinking::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 1.5px solid rgba(37, 99, 235, 0.12);
-        }
-        .node-thinking::before {
-            animation: ripple 3s ease-out infinite;
-        }
-        .node-thinking::after {
-            animation: ripple 3s ease-out 1.5s infinite;
-        }
-        .node-thinking-inner {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-            animation: innerPulse 2.5s ease-in-out infinite;
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
-        }
-        .node-thinking-label {
-            position: absolute;
-            bottom: -24px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            color: #9ca3af;
-            white-space: nowrap;
-            letter-spacing: 0.5px;
-            animation: fadeInOut 3s ease-in-out infinite;
-        }
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(37, 99, 235, 0.08); }
-            50% { transform: scale(1.1); box-shadow: 0 0 50px rgba(37, 99, 235, 0.18); }
-        }
-        @keyframes ripple {
-            0% { transform: scale(1); opacity: 0.5; }
-            100% { transform: scale(2.2); opacity: 0; }
-        }
-        @keyframes innerPulse {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.15); }
-        }
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.8; }
-        }
-
         /* Typing indicator */
         .typing-indicator {
             display: flex;
@@ -583,16 +519,7 @@
             );
         }
 
-        function ThinkingNode() {
-            return (
-                <div className="node-thinking">
-                    <div className="node-thinking-inner" />
-                    <div className="node-thinking-label">Listening...</div>
-                </div>
-            );
-        }
-
-        const nodeTypes = { orgNode: OrgNode, categoryNode: CategoryNode, detailNode: DetailNode, thinkingNode: ThinkingNode };
+        const nodeTypes = { orgNode: OrgNode, categoryNode: CategoryNode, detailNode: DetailNode };
 
         // ─── Main App ──────────────────────────────────────────────────
         function App() {
@@ -613,11 +540,21 @@
 
             const messagesEndRef = useRef(null);
             const inputRef = useRef(null);
+            const reactFlowInstance = useRef(null);
 
             const scrollToBottom = () => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             };
             useEffect(scrollToBottom, [messages, isTyping]);
+
+            // Re-fit the canvas view whenever nodes change
+            useEffect(() => {
+                if (reactFlowInstance.current && nodes.length > 0) {
+                    setTimeout(() => {
+                        reactFlowInstance.current.fitView({ padding: 0.4, duration: 500 });
+                    }, 150);
+                }
+            }, [nodes]);
 
             // Simulate AI "thinking" delay
             const addAIMessage = useCallback((text, delay = 800) => {
@@ -674,7 +611,7 @@
                 });
             }, [nodes, setNodes, setEdges]);
 
-            // Initialize the mindmap when org name is set — only org node + breathing entity
+            // Initialize the mindmap when org name is set — only org node
             const initializeMindmap = useCallback((name) => {
                 const orgNode = {
                     id: 'org-center',
@@ -682,16 +619,7 @@
                     position: { x: 400, y: 300 },
                     data: { label: name },
                 };
-                const thinkingNode = {
-                    id: 'thinking',
-                    type: 'thinkingNode',
-                    position: { x: 375, y: 430 },
-                    data: {},
-                    draggable: false,
-                    selectable: false,
-                    connectable: false,
-                };
-                setNodes([orgNode, thinkingNode]);
+                setNodes([orgNode]);
                 setEdges([]);
             }, [setNodes, setEdges]);
 
@@ -702,10 +630,8 @@
                 const cat = CATEGORIES[categoryKey];
 
                 setNodes((prev) => {
-                    // Remove thinking node once the first category appears
-                    const filtered = prev.filter((n) => n.id !== 'thinking');
                     return [
-                        ...filtered,
+                        ...prev,
                         {
                             id: `cat-${categoryKey}`,
                             type: 'categoryNode',
@@ -931,12 +857,13 @@
                                 onNodesChange={onNodesChange}
                                 onEdgesChange={onEdgesChange}
                                 nodeTypes={nodeTypes}
+                                onInit={(instance) => { reactFlowInstance.current = instance; }}
                                 fitView
-                                fitViewOptions={{ padding: 0.3 }}
+                                fitViewOptions={{ padding: 0.4 }}
                                 proOptions={{ hideAttribution: true }}
                                 defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
                                 minZoom={0.3}
-                                maxZoom={2}
+                                maxZoom={1.5}
                             >
                                 <Background variant="dots" gap={24} size={2} color="#94a3b8" />
                                 <Controls position="bottom-right" />
