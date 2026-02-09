@@ -392,6 +392,60 @@
             font-size: 11px;
             color: #6b7280;
         }
+
+        /* Mobile toggle bar */
+        .mobile-toggle-bar {
+            display: none;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 8px 16px;
+        }
+        .mobile-toggle-inner {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 3px;
+        }
+        .mobile-toggle-btn {
+            flex: 1;
+            padding: 8px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #6b7280;
+        }
+        .mobile-toggle-btn.active {
+            background: #ffffff;
+            color: #111827;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .mobile-toggle-bar { display: block; flex-shrink: 0; }
+            .panel-divider { display: none; }
+            .app-layout { flex-direction: column !important; }
+            .chat-panel-wrap {
+                width: 100% !important;
+                min-width: 0 !important;
+                flex: 1 1 0 !important;
+                overflow: hidden;
+            }
+            .chat-panel-wrap.mobile-hidden { display: none !important; }
+            .canvas-wrap {
+                width: 100% !important;
+                flex: 1 1 0 !important;
+            }
+            .canvas-wrap.mobile-hidden { display: none !important; }
+            .chat-header h1 { font-size: 16px; }
+            .chat-input-area { padding: 12px 16px 16px; }
+            .chat-messages { padding: 12px 16px; }
+            .chip { font-size: 11px; padding: 5px 10px; }
+        }
     </style>
 </head>
 <body>
@@ -668,6 +722,8 @@
             const [nodes, setNodes, onNodesChange] = useNodesState([]);
             const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+            const [mobileView, setMobileView] = useState('chat'); // 'chat' | 'preview'
+
             const messagesEndRef = useRef(null);
             const inputRef = useRef(null);
             const reactFlowInstance = useRef(null);
@@ -928,9 +984,24 @@
             }, [phase, currentCategory]);
 
             return (
-                <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f9fafb' }}>
+                <div className="app-layout" style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f9fafb' }}>
+                    {/* Mobile toggle bar */}
+                    <div className="mobile-toggle-bar">
+                        <div className="mobile-toggle-inner">
+                            <button
+                                className={`mobile-toggle-btn ${mobileView === 'chat' ? 'active' : ''}`}
+                                onClick={() => setMobileView('chat')}
+                            >Chat</button>
+                            <button
+                                className={`mobile-toggle-btn ${mobileView === 'preview' ? 'active' : ''}`}
+                                onClick={() => setMobileView('preview')}
+                            >Preview</button>
+                        </div>
+                    </div>
+
                     {/* Left: Chat Panel */}
-                    <div style={{ width: '420px', minWidth: '360px', flexShrink: 0 }} className="chat-panel">
+                    <div style={{ width: '420px', minWidth: '360px', flexShrink: 0 }}
+                         className={`chat-panel chat-panel-wrap ${mobileView !== 'chat' ? 'mobile-hidden' : ''}`}>
                         <div className="chat-header">
                             <h1>AI Funnel Improver</h1>
                             <p>Build your organisation context</p>
@@ -1009,7 +1080,8 @@
                     <div className="panel-divider" />
 
                     {/* Right: ReactFlow Canvas */}
-                    <div style={{ flex: 1, height: '100%' }}>
+                    <div style={{ flex: 1, height: '100%' }}
+                         className={`canvas-wrap ${mobileView !== 'preview' ? 'mobile-hidden' : ''}`}>
                         <ReactFlowProvider>
                             <ReactFlowComponent
                                 nodes={nodes}
